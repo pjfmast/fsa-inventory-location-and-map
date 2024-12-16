@@ -16,8 +16,11 @@
 
 package com.example.inventory.ui.item
 
+import android.Manifest
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,16 +28,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -46,14 +60,24 @@ import com.example.inventory.R
 import com.example.inventory.ui.AppViewModelProvider
 import com.example.inventory.ui.navigation.NavigationDestination
 import com.example.inventory.ui.theme.InventoryTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.CancellationTokenSource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Currency
 import java.util.Locale
+
 
 object ItemEntryDestination : NavigationDestination {
     override val route = "item_entry"
     override val titleRes = R.string.item_entry_title
 }
+//  "https://developer.android.com/training/location/retrieve-current",
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,9 +85,10 @@ fun ItemEntryScreen(
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     canNavigateBack: Boolean = true,
-    viewModel: ItemEntryViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: ItemEntryViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
             InventoryTopAppBar(
@@ -93,7 +118,7 @@ fun ItemEntryScreen(
                     end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
                 )
                 .verticalScroll(rememberScrollState())
-                .fillMaxWidth()
+                .fillMaxWidth(),
         )
     }
 }
@@ -103,7 +128,7 @@ fun ItemEntryBody(
     itemUiState: ItemUiState,
     onItemValueChange: (ItemDetails) -> Unit,
     onSaveClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
@@ -112,7 +137,7 @@ fun ItemEntryBody(
         ItemInputForm(
             itemDetails = itemUiState.itemDetails,
             onValueChange = onItemValueChange,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         Button(
             onClick = onSaveClick,
@@ -125,12 +150,13 @@ fun ItemEntryBody(
     }
 }
 
+@SuppressLint("MissingPermission")
 @Composable
 fun ItemInputForm(
     itemDetails: ItemDetails,
     modifier: Modifier = Modifier,
     onValueChange: (ItemDetails) -> Unit = {},
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     Column(
         modifier = modifier,
@@ -178,9 +204,102 @@ fun ItemInputForm(
             enabled = enabled,
             singleLine = true
         )
+
+        ShowLocation(
+            onValueChange,
+            itemDetails,
+        )
+
+
         if (enabled) {
             Text(
                 text = stringResource(R.string.required_fields),
+                modifier = Modifier.padding(start = dimensionResource(id = R.dimen.padding_medium))
+            )
+        }
+
+    }
+}
+
+@SuppressLint("MissingPermission")
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun ShowLocation(
+    onValueChange: (ItemDetails) -> Unit,
+    itemDetails: ItemDetails,
+) {
+    val coroutineScope = rememberCoroutineScope()
+
+    val permissions = listOf(
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+    )
+    val locationPermissionState = rememberMultiplePermissionsState(permissions = permissions)
+
+    val context = LocalContext.current
+    val locationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+    var latLng: LatLng by remember {
+        mutableStateOf(LatLng(0.0, 0.0))
+    }
+
+
+    if (!locationPermissionState.allPermissionsGranted) {
+        Column {
+            val textToShow = if (locationPermissionState.shouldShowRationale) {
+                // If the user has denied the permission but the rationale can be shown,
+                // then gently explain why the app requires this permission
+                "The location is important to locate items. Please grant the permission."
+            } else {
+                // If it's the first time the user lands on this feature, or the user
+                // doesn't want to be asked again for this permission, explain that the
+                // permission is required
+                "Location permission required for this feature to be available. " +
+                        "Please grant the permission"
+            }
+            Text(textToShow)
+            Button(onClick = { locationPermissionState.launchMultiplePermissionRequest() }) {
+                Text("Request permission")
+            }
+        }
+    } else {
+        locationClient.lastLocation.addOnSuccessListener { location ->
+//            latLng = LatLng(location.latitude, location.longitude)
+            onValueChange(
+                itemDetails.copy(
+                    latitude = location.latitude,
+                    longitude = location.longitude
+                )
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {
+                coroutineScope.launch(Dispatchers.IO) {
+                    locationClient.getCurrentLocation(
+                        Priority.PRIORITY_HIGH_ACCURACY,
+                        CancellationTokenSource().token,
+                    ).addOnSuccessListener { location ->
+                        latLng = LatLng(location.latitude, location.longitude)
+                        onValueChange(
+                            itemDetails.copy(
+                                latitude = location.latitude,
+                                longitude = location.longitude
+                            )
+                        )
+                    }
+                }
+
+            })
+            {
+                Icon(Icons.Filled.LocationOn, tint = Color.Red, contentDescription = "Location")
+            }
+            Text(
+                text = stringResource(
+                    R.string.current_location,
+                    itemDetails.latitude,
+                    itemDetails.longitude
+                ),
                 modifier = Modifier.padding(start = dimensionResource(id = R.dimen.padding_medium))
             )
         }

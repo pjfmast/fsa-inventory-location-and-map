@@ -19,6 +19,9 @@ buildscript {
     extra.apply {
         set("room_version", "2.6.1")
     }
+    dependencies {
+        classpath("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1")
+    }
 }
 
 plugins {
@@ -29,5 +32,5 @@ plugins {
 }
 
 tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
+    delete(layout.buildDirectory)
 }

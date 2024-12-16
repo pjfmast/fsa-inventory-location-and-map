@@ -28,6 +28,7 @@
     <string name="item_price_req">Item Price*</string>
     <string name="no">No</string>
     <string name="price">Price</string>
+    <string name="locatedAt">Located at</string>
     <string name="quantity_in_stock">Quantity in stock</string>
     <string name="in_stock">%d in stock</string>
     <string name="quantity_req">Quantity in Stock*</string>
@@ -35,4 +36,7 @@
     <string name="sell">Sell</string>
     <string name="yes">Yes</string>
     <string name="required_fields">*required fields</string>
+    <string name="current_location">located at: (%1f, %2f)</string>
+    <string name="location_permission_required">No location permission given!</string>
+    <string name="map">All items on Map</string>
 </resources>

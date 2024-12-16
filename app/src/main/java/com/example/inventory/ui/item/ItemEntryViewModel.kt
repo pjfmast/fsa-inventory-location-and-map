@@ -73,6 +73,8 @@ data class ItemDetails(
     val name: String = "",
     val price: String = "",
     val quantity: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
 )
 
 /**
@@ -84,11 +86,17 @@ fun ItemDetails.toItem(): Item = Item(
     id = id,
     name = name,
     price = price.toDoubleOrNull() ?: 0.0,
-    quantity = quantity.toIntOrNull() ?: 0
+    quantity = quantity.toIntOrNull() ?: 0,
+    latitude = latitude,
+    longitude = longitude
 )
 
 fun Item.formatedPrice(): String {
     return NumberFormat.getCurrencyInstance().format(price)
+}
+
+fun Item.formatedLocation(): String {
+    return "Latitude: $latitude, Longitude: $longitude"
 }
 
 /**
@@ -106,5 +114,7 @@ fun Item.toItemDetails(): ItemDetails = ItemDetails(
     id = id,
     name = name,
     price = price.toString(),
-    quantity = quantity.toString()
+    quantity = quantity.toString(),
+    latitude = latitude,
+    longitude = longitude
 )

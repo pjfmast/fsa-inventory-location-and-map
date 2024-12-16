@@ -19,6 +19,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -65,6 +66,15 @@ android {
 }
 
 dependencies {
+    // added for location permissions
+    implementation ("com.google.accompanist:accompanist-permissions:0.37.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+    implementation("com.google.maps.android:maps-compose:6.4.0")
+    implementation("com.google.maps.android:maps-compose-utils:6.4.0")
+    implementation("com.google.maps.android:maps-compose-widgets:6.4.0")
+
     // Import the Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.activity:activity-compose:1.9.3")
