@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -292,7 +293,7 @@ private fun ShowLocation(
 
             })
             {
-                Icon(Icons.Filled.LocationOn, tint = Color.Red, contentDescription = "Location")
+                Icon(Icons.Filled.Refresh, tint = Color.Red, contentDescription = "Location")
             }
             Text(
                 text = stringResource(
